@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Relaxation Reminder</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Font */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f9ff; /* Very light sky blue background */
+            /* Soft bubble/dot pattern background */
+            background-image: radial-gradient(circle at 10% 20%, #e0f2fe 1px, transparent 1px), 
+                              radial-gradient(circle at 70% 80%, #bae6fd 1px, #f0f9ff 1px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+        /* Custom shadow to give a 3D fluffy pillow look */
+        .pillow-shadow {
+            /* Multi-layer shadow for 3D depth and lift */
+            box-shadow: 
+                0 15px 30px -5px rgba(14, 165, 233, 0.25), /* Strong blue shadow for lift */
+                0 6px 10px -3px rgba(0, 0, 0, 0.08),
+                /* Inner shadow for convex/fluffy effect */
+                inset 0 2px 5px 0 rgba(255, 255, 255, 0.9), /* Highlight */
+                inset 0 -1px 3px 0 rgba(0, 0, 0, 0.1); /* Soft shadow */
+            /* Soft blue border */
+            border: 4px solid var(--blue-border-color, #e0f2fe); 
+        }
+        
+        /* Custom scrolling for tip content container */
+        .tip-content {
+            transition: opacity 0.5s ease-in-out;
+            min-height: 100px;
+        }
+
+        /* Heart pulse animation (for hugs and rest tips) */
+        @keyframes heart-pulse {
+            0% { transform: scale(0.9); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1.0; }
+            100% { transform: scale(0.9); opacity: 0.8; }
+        }
+        .pulsing-heart {
+            display: inline-block;
+            animation: heart-pulse 1.2s infinite ease-in-out;
+        }
+
+        /* Pillow pulse animation (for rewards) */
+        @keyframes pillow-pulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 5px #38bdf8); } /* sky-400 */
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 15px #38bdf8); }
+            100% { transform: scale(1); filter: drop-shadow(0 0 5px #38bdf8); }
+        }
+        .pillow-hug {
+            display: inline-block;
+            animation: pillow-pulse 1.5s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main Container - Pillow effect class added -->
+    <div id="app-container" class="w-full max-w-lg bg-white rounded-3xl pillow-shadow p-6 md:p-10 transform transition-all duration-300">
+        <h1 class="text-3xl font-extrabold text-center text-sky-700 mb-6 tracking-tight flex items-center justify-center relative">
+            <!-- Decorative elements: Cloud and Sleeping Bear -->
+            <span class="absolute -left-4 top-0 text-sky-400 transform -rotate-12 text-xl">☁️</span>
+            <span class="absolute -right-4 bottom-0 text-amber-500 transform rotate-6 text-xl">🐻</span>
+            Time for a Little Break
+        </h1>
+
+        <!-- Status / Streak Display - Smaller pillow effect -->
+        <div class="flex justify-between items-center mb-6 bg-sky-100/50 p-3 rounded-2xl pillow-shadow text-sky-800 border-none" style="--blue-border-color: #bae6fd;">
+            <span class="flex items-center text-sm font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21a9 9 0 0 0 9-9c0-1.2-.4-2.4-1.2-3.4L18 7"/><path d="M3 11a9 9 0 0 1 9-9c1.2 0 2.4.4 3.4 1.2L16 6"/></svg>
+                Last Check: <span id="lastCheckDate" class="ml-1 font-semibold text-sky-900 text-xs italic">Loading...</span>
+            </span>
+            <span class="flex items-center text-sm font-medium">
+                <span class="mr-2">⭐️</span>
+                 Stars: <span id="starCountDisplay" class="ml-1 font-semibold text-sky-900 text-xs italic">0</span>
+            </span>
+            <span class="text-sm font-medium hidden md:block">
+                 User ID: <span id="userIdDisplay" class="font-mono text-xs text-sky-600">...</span>
+            </span>
+        </div>
+
+        <!-- Relaxation Tip Card - Large rounded pillow effect -->
+        <div class="bg-white p-6 rounded-[3rem] pillow-shadow" style="--blue-border-color: #7dd3fc;">
+            <h2 id="tipHeader" class="text-xl font-bold text-sky-700/80 mb-4 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4a2 2 0 0 0-2 2v1h-3V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2v14h3v-7h4v7h3V10h2a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3Z"/></svg>
+                Welcome
+            </h2>
+            <div id="tipContent" class="tip-content text-lg text-gray-700 leading-relaxed min-h-[100px] flex items-center justify-center text-center">
+                <div id="loadingIndicator" class="text-gray-400">Initializing application...</div>
+            </div>
+        </div>
+
+        <!-- Action Button Pillow Container -->
+        <div class="mt-8 p-3 rounded-3xl pillow-shadow bg-sky-200/50" style="--blue-border-color: #e0f2fe;">
+            <button id="getTipButton" class="w-full py-4 px-6 bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-lg rounded-2xl transition duration-300 transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center group shadow-md shadow-sky-500/30">
+                <!-- Self-Care / Rest Heart Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 transition-transform duration-300 group-hover:scale-110" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                I Need A Break
+            </button>
+        </div>
+
+        <!-- Extra Mission Link (Shown when daily task is complete) -->
+        <div id="oneMoreMissionContainer" class="text-center mt-4 hidden">
+            <a href="#" id="oneMoreMissionLink" class="text-sm text-sky-600 hover:text-sky-800 font-semibold transition duration-200">
+                One More Mission
+            </a>
+        </div>
+
+        <!-- Message / Error Box - Sky blue success style -->
+        <div id="messageBox" class="mt-4 p-3 text-sm text-red-700 bg-red-100 border border-red-300 rounded-lg hidden" role="alert"></div>
+
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Global Variables (Provided by Canvas Environment) ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- DOM Elements ---
+        const tipContentEl = document.getElementById('tipContent');
+        const tipHeaderEl = document.getElementById('tipHeader');
+        const getTipButton = document.getElementById('getTipButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const lastCheckDateEl = document.getElementById('lastCheckDate');
+        const userIdDisplayEl = document.getElementById('userIdDisplay');
+        const starCountDisplay = document.getElementById('starCountDisplay');
+        const messageBox = document.getElementById('messageBox');
+        const oneMoreMissionContainer = document.getElementById('oneMoreMissionContainer');
+        const oneMoreMissionLink = document.getElementById('oneMoreMissionLink');
+
+
+        // --- Firebase Setup and State ---
+        let db;
+        let auth;
+        let userId = null;
+        let isAuthReady = false;
+        let greetingIntervalId = null; 
+        let starCount = 0; 
+
+        setLogLevel('debug');
+
+        // --- Data ---
+        const RELAXATION_TIPS = {
+            '1': "You're feeling good! Keep it up. Try this quick trick: **Slowly drink a glass of water**, focusing on the cool sensation as you swallow, to refresh your mind.",
+            '2': "A little tired, but still strong. Take a moment for a mini recharge: **Stretch your neck and shoulders**. Gently roll your shoulders back five times, then forward five times.",
+            '3': "Feeling that mid-day slump. Time for a mindful pause: **Practice 5 deep belly breaths**. Inhale slowly to a count of 4, hold for 4, and fully exhale for 6.",
+            '4': "You are definitely feeling fatigued. Let's ground yourself: **Engage your five senses**. Name one thing you can see, hear, smell, touch, and (if applicable) taste.",
+            '5': "Extreme fatigue detected! You deserve deep rest. **Close your eyes and imagine a place that brings you absolute peace** (a cozy bed, a sunny beach, a silent forest). Stay there for 60 seconds.",
+        };
+
+        const GREETING_MESSAGES = [
+            "Hello, you lovely human! Time for a recharge 🔋.",
+            "A cozy space is ready for you. 🐻 Sweet dreams!",
+            "Welcome back, rest is waiting! 😴",
+            "Let's take a moment today to stay centered. 🦊",
+            "Feeling the pressure? I'm here for you! ✨",
+        ];
+
+        let currentGreetingIndex = 0;
+
+        // --- UI Utilities ---
+
+        function clearGreetingCycle() {
+            if (greetingIntervalId !== null) {
+                clearInterval(greetingIntervalId);
+                greetingIntervalId = null;
+            }
+        }
+
+        function startGreetingCycle() {
+            // Restore header text
+            tipHeaderEl.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4a2 2 0 0 0-2 2v1h-3V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2v14h3v-7h4v7h3V10h2a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3Z"/></svg>
+                Welcome
+            `;
+            tipContentEl.innerHTML = GREETING_MESSAGES[currentGreetingIndex];
+
+            if (greetingIntervalId === null) {
+                greetingIntervalId = setInterval(() => {
+                    tipContentEl.style.opacity = 0;
+                    setTimeout(() => {
+                        currentGreetingIndex = (currentGreetingIndex + 1) % GREETING_MESSAGES.length;
+                        tipContentEl.innerHTML = GREETING_MESSAGES[currentGreetingIndex];
+                        tipContentEl.style.opacity = 1;
+                    }, 500);
+                }, 4000);
+            }
+        }
+
+
+        function displayMessage(message, isError = false) {
+            messageBox.textContent = message;
+            messageBox.className = `mt-4 p-3 text-sm rounded-lg ${isError ? 'text-red-700 bg-red-100 border border-red-300' : 'text-sky-700 bg-sky-100 border border-sky-300'}`;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 5000);
+        }
+
+        function getTodayDateString() {
+            return new Date().toISOString().split('T')[0];
+        }
+        
+        // --- Firestore References ---
+
+        function getDailyCheckRef(currentUserId) {
+            if (!db || !currentUserId) return null;
+            // Private user data path: /artifacts/{appId}/users/{userId}/relaxation_data/daily_check
+            return doc(db, 'artifacts', appId, 'users', currentUserId, 'relaxation_data', 'daily_check');
+        }
+
+        function getStarStatsRef(currentUserId) {
+            if (!db || !currentUserId) return null;
+            // Private user stats path: /artifacts/{appId}/users/{userId}/user_stats/stars
+            return doc(db, 'artifacts', appId, 'users', currentUserId, 'user_stats', 'stars');
+        }
+
+        // --- Firestore Operations ---
+
+        // Load star count
+        async function loadStarCount() {
+            if (!isAuthReady || !userId) return;
+            try {
+                const statsRef = getStarStatsRef(userId);
+                const docSnap = await getDoc(statsRef);
+
+                if (docSnap.exists()) {
+                    starCount = docSnap.data().starCount || 0;
+                } else {
+                    // Initialize if missing
+                    starCount = 0;
+                    await setDoc(statsRef, { starCount: 0 });
+                }
+                starCountDisplay.textContent = starCount;
+
+            } catch (error) {
+                console.error("Error loading star count:", error);
+                displayMessage("Error loading star count.", true);
+            }
+        }
+        
+        // Update star count after task completion
+        async function updateStarCount(starsToAdd) {
+            if (!isAuthReady || !userId) return;
+            
+            starCount += starsToAdd;
+            starCountDisplay.textContent = starCount;
+
+            try {
+                const statsRef = getStarStatsRef(userId);
+                await updateDoc(statsRef, { starCount: starCount });
+                console.log(`Star count updated: +${starsToAdd} to ${starCount}`);
+                checkStarReward(); // Check reward immediately after update
+            } catch (error) {
+                console.error("Error updating star count:", error);
+                displayMessage("Failed to save star progress.", true);
+            }
+        }
+
+
+        // Load last check-in date from Firestore
+        async function loadDailyCheck() {
+            if (!isAuthReady || !userId) return;
+
+            getTipButton.disabled = true;
+            oneMoreMissionContainer.classList.add('hidden');
+
+            // Load stars first
+            await loadStarCount(); 
+
+            try {
+                const checkRef = getDailyCheckRef(userId);
+                const docSnap = await getDoc(checkRef);
+                const today = getTodayDateString();
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const lastCheckDate = data.lastCheckDate;
+                    lastCheckDateEl.textContent = lastCheckDate || 'Never';
+
+                    if (lastCheckDate === today) {
+                        clearGreetingCycle();
+                        tipHeaderEl.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-sky-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4a2 2 0 0 0-2 2v1h-3V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h2v14h3v-7h4v7h3V10h2a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3Z"/></svg>
+                            Task Status
+                        `;
+                        tipContentEl.innerHTML = `<span class="font-semibold text-sky-600">You've earned your rest time for today!</span> <br/> Come back tomorrow for a new mission.`;
+                        displayMessage(`You checked in today! (${lastCheckDate}) Take it easy.`, false);
+                        
+                        // Ensure button reflects completed state
+                        getTipButton.textContent = 'Today\'s Task Complete!';
+                        getTipButton.disabled = true;
+                        getTipButton.className = getTipButton.className.replace('bg-sky-600', 'bg-gray-400');
+                        
+                        // Show the 'One More Mission' link
+                        oneMoreMissionContainer.classList.remove('hidden');
+
+                    } else {
+                        startGreetingCycle();
+                        getTipButton.textContent = 'I Need A Break';
+                        getTipButton.className = getTipButton.className.replace('bg-gray-400', 'bg-sky-600');
+                    }
+                } else {
+                    lastCheckDateEl.textContent = 'Never';
+                    startGreetingCycle();
+                    getTipButton.textContent = 'I Need A Break';
+                    getTipButton.className = getTipButton.className.replace('bg-gray-400', 'bg-sky-600');
+                }
+
+            } catch (error) {
+                console.error("Error loading daily check data:", error);
+                displayMessage("Error loading data. Check console for details.", true);
+                startGreetingCycle(); 
+            } finally {
+                getTipButton.disabled = false;
+            }
+        }
+
+        // Save today's check-in
+        async function saveDailyCheck() {
+            if (!isAuthReady || !userId) return;
+
+            const today = getTodayDateString();
+            const checkRef = getDailyCheckRef(userId);
+
+            try {
+                await setDoc(checkRef, { lastCheckDate: today }, { merge: true });
+                lastCheckDateEl.textContent = today;
+            } catch (error) {
+                console.error("Error saving daily check data:", error);
+                displayMessage("Failed to save check-in time.", true);
+            }
+        }
+
+        // --- Application Logic ---
+
+        // Check and display the pillow reward
+        function checkStarReward() {
+            if (starCount >= 100) {
+                // NEW: Inline SVG for a cute sleep cloud/moon pillow
+                const cutePillowSvg = `
+                    <svg class="pillow-hug" width="180" height="180" viewBox="0 0 200 150" fill="none" xmlns="http://www.w3.org/2000/svg" 
+                         style="filter: drop-shadow(0 4px 6px rgba(14, 165, 233, 0.5));">
+                        
+                        <!-- Main Cloud Pillow Shape (soft white/blue) -->
+                        <rect x="10" y="10" width="180" height="130" rx="30" ry="30" fill="#ffffff" stroke="#93c5fd" stroke-width="8"/>
+                        
+                        <!-- Zzz Icon/Text (soft blue) -->
+                        <text x="140" y="45" font-family="Inter, sans-serif" font-size="28" fill="#38bdf8" font-weight="bold" opacity="0.8">Z</text>
+                        <text x="160" y="65" font-family="Inter, sans-serif" font-size="20" fill="#38bdf8" opacity="0.6">z</text>
+                        
+                        <!-- Sleepy Eyes (closed arcs, dark blue) -->
+                        <path d="M70 75 C75 80, 85 80, 90 75" stroke="#1d4ed8" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M110 75 C115 80, 125 80, 130 75" stroke="#1d4ed8" stroke-width="4" stroke-linecap="round"/>
+                        
+                        <!-- Cute Smile -->
+                        <path d="M95 95 Q100 105, 105 95" stroke="#1d4ed8" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        
+                        <!-- Extra cute little star/heart -->
+                        <text x="20" y="30" font-size="16" fill="#f87171">★</text>
+                        <text x="165" y="130" font-size="16" fill="#f87171">♥</text>
+                        
+                    </svg>
+                `;
+                
+                tipHeaderEl.innerHTML = `
+                    <span class="text-3xl mr-2 pillow-hug">🛌</span> <!-- Bed/Pillow emoji -->
+                    Super Rest Reward!
+                `;
+                tipContentEl.innerHTML = `
+                    <p class="font-extrabold text-sky-600 mb-4 text-2xl">Reward Unlocked! Enjoy this giant cozy pillow!</p>
+                    <div class="mt-4 flex justify-center">
+                        ${cutePillowSvg} 
+                    </div>
+                    <p class="text-sm mt-4 text-gray-500">It's time for some deep rest. You earned it!</p>
+                `;
+            }
+        }
+
+        // Function to immediately reset UI and start a new (Bonus) mission
+        function oneMoreMission() {
+            clearGreetingCycle();
+            
+            // 1. Display specific welcome message
+            tipHeaderEl.innerHTML = `
+                <span class="text-2xl mr-2">😃</span>
+                Welcome back!
+            `;
+            tipContentEl.innerHTML = `<span class="font-semibold text-sky-600">I'm here for you, let's take a break.</span>`;
+            tipContentEl.style.opacity = 1;
+
+            // 2. Hide link and prepare main button
+            oneMoreMissionContainer.classList.add('hidden');
+            
+            getTipButton.textContent = 'I Need A Break';
+            getTipButton.disabled = false;
+            // Restore active button styling
+            getTipButton.className = getTipButton.className.replace('bg-gray-400', 'bg-sky-600').replace('hover:bg-gray-400', 'hover:bg-sky-700');
+
+            // 3. Start the tiredness check selection immediately after a short delay
+            displayMessage("Starting a new Bonus Mission!", false);
+            setTimeout(startTirednessCheck, 1500); 
+        }
+
+        // Function to display tiredness selection buttons
+        function startTirednessCheck() {
+            clearGreetingCycle();
+            getTipButton.disabled = true;
+
+            tipHeaderEl.innerHTML = `
+                <span class="text-xl font-bold text-sky-700/80 mb-4 flex items-center">
+                    <span class="text-2xl mr-2">😴</span>
+                    How tired are you right now?
+                </span>
+            `;
+
+            let buttonsHtml = '<div class="flex justify-between mt-4 mb-2 font-semibold text-sm text-gray-500">';
+            buttonsHtml += '<span class="text-sky-500">Not Tired (1)</span>';
+            buttonsHtml += '<span>(5) Exhausted 💀</span>';
+            buttonsHtml += '</div>';
+            
+            buttonsHtml += '<div id="tirednessButtons" class="flex justify-between gap-2">';
+            for (let i = 1; i <= 5; i++) {
+                buttonsHtml += `
+                    <button 
+                        data-level="${i}" 
+                        class="tiredness-btn w-full py-4 text-lg font-bold rounded-lg transition duration-200 bg-sky-100 text-sky-700 hover:bg-sky-200 hover:scale-[1.05] active:bg-sky-400"
+                    >
+                        ${i}
+                    </button>
+                `;
+            }
+            buttonsHtml += '</div>';
+
+            tipContentEl.innerHTML = buttonsHtml;
+            tipContentEl.style.opacity = 1;
+            
+            document.querySelectorAll('.tiredness-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const level = event.target.getAttribute('data-level');
+                    handleTirednessSelection(level);
+                });
+            });
+        }
+
+        // Function to handle the selection of the tiredness level
+        function handleTirednessSelection(level) {
+            getTipButton.disabled = true;
+            tipContentEl.style.opacity = 0;
+
+            setTimeout(async () => {
+                const tip = RELAXATION_TIPS[level] || "Sorry, couldn't find a tip for that level. Just take 5 deep breaths!";
+
+                // 1. Display the customized tip and heart animation
+                tipHeaderEl.innerHTML = `
+                    <span class="text-2xl mr-2">💡</span>
+                    Your Daily Rest Mission (Level ${level})
+                `;
+                tipContentEl.innerHTML = `
+                    <p class="mb-4">${tip}</p>
+                    <p class="font-extrabold text-sky-800 mt-4">
+                        Now, look in the mirror (or at the screen) and say: "You are doing great!"
+                    </p>
+                    <!-- Visual Reward: Pulsing Heart (A big hug) -->
+                    <div class="mt-6 text-5xl text-red-500">
+                        <span class="pulsing-heart">❤️</span>
+                    </div>
+                `;
+                tipContentEl.style.opacity = 1;
+
+                // 2. Award stars and check reward (Award 10 stars)
+                await updateStarCount(10); 
+                
+                // 3. Save check-in (This prevents non-mission restart on page refresh)
+                await saveDailyCheck();
+                displayMessage(`Rest mission logged! +10 Stars ⭐️! Total: ${starCount}`, false);
+
+                // 4. Update main button text (and disable until tomorrow)
+                getTipButton.textContent = 'Today\'s Task Complete!';
+                getTipButton.disabled = true;
+                getTipButton.className = getTipButton.className.replace('bg-sky-600', 'bg-gray-400').replace('hover:bg-sky-700', 'hover:bg-gray-400');
+
+                // 5. Show the 'One More Mission' link
+                oneMoreMissionContainer.classList.remove('hidden');
+
+            }, 500);
+        }
+
+        // --- Initialization and Event Listeners ---
+
+        async function initFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        isAuthReady = true;
+                        userIdDisplayEl.textContent = userId;
+                        loadingIndicator.textContent = "Checking your rest status...";
+                        loadDailyCheck(); 
+                    } else {
+                        console.log("User logged out or anonymous sign-in failed.");
+                        userId = 'anonymous';
+                        isAuthReady = true;
+                        userIdDisplayEl.textContent = userId;
+                        loadingIndicator.textContent = "Error: Authentication failed.";
+                        displayMessage("Authentication failed. Check console.", true);
+                        startGreetingCycle();
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase Initialization Failed:", error);
+                loadingIndicator.textContent = "Error on startup.";
+                displayMessage("Application initialization failed. See console for error.", true);
+                getTipButton.disabled = true;
+                startGreetingCycle(); 
+            }
+        }
+
+        initFirebase();
+
+        // Event listener for the "One More Mission" link
+        oneMoreMissionLink.addEventListener('click', (e) => {
+            e.preventDefault(); 
+            oneMoreMission();
+        });
+
+        // Event listener for the main button
+        getTipButton.addEventListener('click', () => {
+            if (isAuthReady && getTipButton.textContent !== 'Today\'s Task Complete!') {
+                startTirednessCheck(); 
+            } else if (!isAuthReady) {
+                displayMessage("Application is still initializing. Please wait.", true);
+            }
+        });
+
+    </script>
+</body>
+</html>
+
